@@ -1,18 +1,21 @@
-#include "../include/secure.h"
+#include "secure.h"
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 
 void* secure_alloc(size_t size) {
     if (size == 0) return NULL;
     void* ptr = malloc(size);
     if (ptr) {
         memset(ptr, 0, size);
+        mlock(ptr, size);
     }
     return ptr;
 }
 
 void secure_free(void* ptr, size_t size) {
     if (ptr && size > 0) {
+        munlock(ptr, size);
         volatile uint8_t* p = (volatile uint8_t*)ptr;
         for (size_t i = 0; i < size; i++) {
             p[i] = 0;

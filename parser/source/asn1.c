@@ -1,5 +1,5 @@
-#include "../include/asn1.h"
-#include "../../memory/include/secure.h"
+#include "asn1.h"
+#include "secure.h"
 #include <stdlib.h>
 #include <string.h>
 

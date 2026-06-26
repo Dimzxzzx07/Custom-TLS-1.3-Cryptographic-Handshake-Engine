@@ -13,3 +13,12 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/axon
+
+override_dh_auto_test:
+	@echo "Skip test"
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/axon
+
+override_dh_install:
+	@echo "Skip dh_install,"

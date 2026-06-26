@@ -1,4 +1,4 @@
-#include "../include/bytes.h"
+#include "bytes.h"
 #include <string.h>
 
 uint16_t bytes_to_uint16(const uint8_t* bytes) {

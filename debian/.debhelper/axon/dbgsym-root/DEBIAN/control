@@ -1,0 +1,13 @@
+Package: axon-dbgsym
+Package-Type: ddeb
+Source: axon
+Version: 1.0.0-1
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: Developer <dimzxae@gmail.com>
+Installed-Size: 20
+Depends: axon (= 1.0.0-1)
+Section: debug
+Priority: optional
+Description: debug symbols for axon
+Build-Ids: 660fb177200156c1266ddb6b25eedde33c10cd93

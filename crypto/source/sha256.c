@@ -1,4 +1,4 @@
-#include "../include/sha256.h"
+#include "../../crypto/include/sha256.h"
 #include <string.h>
 
 #define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))

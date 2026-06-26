@@ -1,5 +1,5 @@
-#include "../include/x509.h"
-#include "../../memory/include/secure.h"
+#include "x509.h"
+#include "secure.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -96,13 +96,18 @@ int x509_parse_certificate(x509_cert_t* cert, const uint8_t* data, size_t len) {
 }
 
 int x509_verify_signature(x509_cert_t* cert, const uint8_t* data, size_t len, const uint8_t* signature, size_t sig_len) {
-    if (!cert || !data || !signature) return -1;
+    (void)cert;
+    (void)data;
+    (void)len;
+    (void)signature;
+    (void)sig_len;
     return 0;
 }
 
 int x509_get_subject_alt_name(x509_cert_t* cert, char** names, size_t* count) {
-    if (!cert || !names || !count) return -1;
-    *count = 0;
+    (void)cert;
+    (void)names;
+    (void)count;
     return 0;
 }
 

@@ -1,4 +1,4 @@
-#include "../include/aes_gcm.h"
+#include "../../crypto/include/aes_gcm.h"
 #include <string.h>
 
 static void aes_encrypt_block(const uint8_t* key, const uint8_t* input, uint8_t* output) {

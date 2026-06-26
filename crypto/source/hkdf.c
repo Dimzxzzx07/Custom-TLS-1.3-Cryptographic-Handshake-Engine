@@ -1,5 +1,5 @@
-#include "../include/hkdf.h"
-#include "../include/sha256.h"
+#include "../../crypto/include/hkdf.h"
+#include "../../crypto/include/sha256.h"
 #include <string.h>
 
 int hkdf_extract(const uint8_t* salt, size_t salt_len, const uint8_t* ikm, size_t ikm_len, uint8_t* prk) {

@@ -4,6 +4,6 @@ axon (1.0.0-1) unstable; urgency=medium
   * Custom TLS 1.3 stack with constant-time crypto
   * Support for X25519, AES-GCM, ChaCha20-Poly1305
   * No legacy TLS versions below 1.3
-  * Renamed project to Axon
+  * Memory-safe design with secure allocator
 
  -- Developer <dimzxae@gmail.com>  Thu, 26 Jun 2026 00:00:00 +0000

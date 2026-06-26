@@ -1,13 +1,13 @@
-#include "../include/record.h"
-#include "../include/constants.h"
-#include "../../crypto/include/aes_gcm.h"
-#include "../../crypto/include/chacha20.h"
-#include "../../crypto/include/constant.h"
-#include "../../memory/include/secure.h"
+#include "record.h"
+#include "constants.h"
+#include "aes_gcm.h"
+#include "chacha20.h"
+#include "constant.h"
+#include "secure.h"
 #include <string.h>
 #include <stdlib.h>
 
-int tls_record_read(tls_context_t* ctx, const uint8_t* data, size_t len, tls_record_t* record) {
+int axon_record_read(axon_context_t* ctx, const uint8_t* data, size_t len, axon_record_t* record) {
     if (!ctx || !data || !record || len < 5) return -1;
     
     record->content_type = data[0];
@@ -19,7 +19,7 @@ int tls_record_read(tls_context_t* ctx, const uint8_t* data, size_t len, tls_rec
     if (record->content_type == TLS_CONTENT_ALERT) {
         if (record->length >= 2) {
             uint8_t level = data[5];
-            
+            uint8_t desc = data[6];
             if (level == TLS_ALERT_LEVEL_FATAL) {
                 return -1;
             }
@@ -39,7 +39,7 @@ int tls_record_read(tls_context_t* ctx, const uint8_t* data, size_t len, tls_rec
     return 0;
 }
 
-int tls_record_write(tls_context_t* ctx, uint8_t content_type, const uint8_t* payload, size_t payload_len, uint8_t* out, size_t* out_len) {
+int axon_record_write(axon_context_t* ctx, uint8_t content_type, const uint8_t* payload, size_t payload_len, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     if (payload_len > 16384) return -1;
     
@@ -57,7 +57,18 @@ int tls_record_write(tls_context_t* ctx, uint8_t content_type, const uint8_t* pa
     return 0;
 }
 
-int tls_record_decrypt(tls_context_t* ctx, tls_record_t* record, uint8_t* plaintext, size_t* out_len) {
+static void build_nonce(uint8_t* nonce, const uint8_t* iv, uint64_t seq_num) {
+    for (int i = 0; i < 12; i++) {
+        nonce[i] = iv[i];
+    }
+    
+    for (int i = 0; i < 8; i++) {
+        uint8_t seq_byte = (seq_num >> ((7 - i) * 8)) & 0xFF;
+        nonce[4 + i] ^= seq_byte;
+    }
+}
+
+int axon_record_decrypt(axon_context_t* ctx, axon_record_t* record, uint8_t* plaintext, size_t* out_len) {
     if (!ctx || !record || !plaintext || !out_len) return -1;
     
     if (record->content_type != TLS_CONTENT_APPLICATION_DATA) {
@@ -70,19 +81,15 @@ int tls_record_decrypt(tls_context_t* ctx, tls_record_t* record, uint8_t* plaint
     uint8_t key[32] = {0};
     uint8_t tag[16] = {0};
     
-    memcpy(nonce, record->fragment, 4);
-    
-    for (int i = 0; i < 4; i++) {
-        nonce[8 + i] = (ctx->sequence_number >> ((3 - i) * 8)) & 0xFF;
-    }
+    build_nonce(nonce, ctx->read_iv, ctx->sequence_number);
     ctx->sequence_number++;
     
     memcpy(key, ctx->read_key, 32);
     
     size_t ciphertext_len = record->length - 16;
-    memcpy(tag, record->fragment + ciphertext_len + 4, 16);
+    memcpy(tag, record->fragment + ciphertext_len, 16);
     
-    int ret = aes_gcm_decrypt(key, nonce, record->fragment + 4, ciphertext_len, NULL, 0, plaintext, out_len, tag);
+    int ret = aes_gcm_decrypt(key, nonce, record->fragment, ciphertext_len, NULL, 0, plaintext, out_len, tag);
     
     secure_free(record->fragment, record->length);
     record->fragment = NULL;
@@ -90,7 +97,7 @@ int tls_record_decrypt(tls_context_t* ctx, tls_record_t* record, uint8_t* plaint
     return ret;
 }
 
-int tls_record_encrypt(tls_context_t* ctx, uint8_t content_type, const uint8_t* plaintext, size_t len, uint8_t* out, size_t* out_len) {
+int axon_record_encrypt(axon_context_t* ctx, uint8_t content_type, const uint8_t* plaintext, size_t len, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     if (len > 16384) return -1;
     
@@ -102,10 +109,7 @@ int tls_record_encrypt(tls_context_t* ctx, uint8_t content_type, const uint8_t* 
     
     memcpy(key, ctx->write_key, 32);
     
-    memcpy(nonce, ctx->write_iv, 12);
-    for (int i = 0; i < 8; i++) {
-        nonce[4 + i] ^= (ctx->sequence_number >> ((7 - i) * 8)) & 0xFF;
-    }
+    build_nonce(nonce, ctx->write_iv, ctx->sequence_number);
     ctx->sequence_number++;
     
     int ret = aes_gcm_encrypt(key, nonce, plaintext, len, NULL, 0, ciphertext, &ciphertext_len, tag);
@@ -117,9 +121,8 @@ int tls_record_encrypt(tls_context_t* ctx, uint8_t content_type, const uint8_t* 
     out[3] = ((ciphertext_len + 16) >> 8) & 0xFF;
     out[4] = (ciphertext_len + 16) & 0xFF;
     
-    memcpy(out + 5, nonce, 4);
-    memcpy(out + 9, ciphertext, ciphertext_len);
-    memcpy(out + 9 + ciphertext_len, tag, 16);
+    memcpy(out + 5, ciphertext, ciphertext_len);
+    memcpy(out + 5 + ciphertext_len, tag, 16);
     
     *out_len = 5 + ciphertext_len + 16;
     return 0;

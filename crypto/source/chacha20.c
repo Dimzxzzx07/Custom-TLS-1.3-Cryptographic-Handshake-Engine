@@ -1,4 +1,4 @@
-#include "../include/chacha20.h"
+#include "../../crypto/include/chacha20.h"
 #include <string.h>
 
 #define ROTL32(a,b) (((a) << (b)) | ((a) >> (32 - (b))))

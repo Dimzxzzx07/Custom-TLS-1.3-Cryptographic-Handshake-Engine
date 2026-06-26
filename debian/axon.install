@@ -1,4 +1,3 @@
-usr/bin/axon-engine
-usr/lib/libaxon.a
-usr/lib/libaxon.so
+usr/libaxon.a
+usr/libaxon.so
 usr/include/axon/*.h

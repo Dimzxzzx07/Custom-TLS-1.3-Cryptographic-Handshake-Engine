@@ -6,12 +6,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2")
 
 set(SOURCES
-    core/source/context.c
+    core/source/main.c
     core/source/constants.c
+    core/source/context.c
     core/source/handshake.c
     core/source/record.c
     core/source/state.c
-    core/source/main.c
     crypto/source/aes_gcm.c
     crypto/source/chacha20.c
     crypto/source/x25519.c
@@ -27,9 +27,9 @@ set(SOURCES
 )
 
 set(HEADERS
-    core/include/tls_engine.h
-    core/include/context.h
+    core/include/axon_engine.h
     core/include/constants.h
+    core/include/context.h
     core/include/handshake.h
     core/include/record.h
     core/include/state.h
@@ -50,30 +50,11 @@ set(HEADERS
 add_library(axon_static STATIC ${SOURCES})
 add_library(axon_shared SHARED ${SOURCES})
 
-set_target_properties(axon_static PROPERTIES OUTPUT_NAME axon)
-set_target_properties(axon_shared PROPERTIES OUTPUT_NAME axon)
-
-target_include_directories(axon_static PUBLIC
-    core/include
-    crypto/include
-    parser/include
-    memory/include
-    utils/include
-)
-target_include_directories(axon_shared PUBLIC
-    core/include
-    crypto/include
-    parser/include
-    memory/include
-    utils/include
-)
-
 add_executable(axon-engine core/source/main.c)
 target_link_libraries(axon-engine axon_static)
 
 install(TARGETS axon_static axon_shared DESTINATION lib)
 install(FILES ${HEADERS} DESTINATION include/axon)
-install(TARGETS axon-engine DESTINATION bin)
 
 enable_testing()
 add_executable(test_handshake tests/c/test_handshake.c)

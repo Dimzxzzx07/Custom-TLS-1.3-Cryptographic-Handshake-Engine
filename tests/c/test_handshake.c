@@ -1,11 +1,11 @@
-#include "../engine/include/tls_engine.h"
-#include "../engine/include/constants.h"
+#include "axon_engine.h"
+#include "constants.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 int main(void) {
-    tls_engine_t* eng = tls_engine_create();
+    axon_engine_t* eng = axon_engine_create();
     if (!eng) {
         printf("FAIL: engine create\n");
         return 1;
@@ -42,14 +42,14 @@ int main(void) {
     uint8_t response[4096] = {0};
     size_t response_len = 0;
     
-    int ret = tls_engine_handshake(eng, client_hello, client_hello_len, response, &response_len);
+    int ret = axon_engine_handshake(eng, client_hello, client_hello_len, response, &response_len);
     if (ret < 0) {
         printf("FAIL: handshake failed\n");
-        tls_engine_destroy(eng);
+        axon_engine_destroy(eng);
         return 1;
     }
     
     printf("PASS: handshake completed, response_len=%zu\n", response_len);
-    tls_engine_destroy(eng);
+    axon_engine_destroy(eng);
     return 0;
 }

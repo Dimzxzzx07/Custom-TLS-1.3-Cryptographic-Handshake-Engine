@@ -2,7 +2,7 @@
 #include "../include/constants.h"
 #include <string.h>
 
-tls_state_t tls_state_machine(tls_context_t* ctx, tls_state_t current, uint8_t message_type) {
+axon_state_t axon_state_machine(axon_context_t* ctx, axon_state_t current, uint8_t message_type) {
     if (!ctx) return STATE_ERROR;
     
     switch (current) {
@@ -59,7 +59,7 @@ tls_state_t tls_state_machine(tls_context_t* ctx, tls_state_t current, uint8_t m
     }
 }
 
-const char* tls_state_to_string(tls_state_t state) {
+const char* axon_state_to_string(axon_state_t state) {
     switch (state) {
         case STATE_INIT: return "INIT";
         case STATE_WAITING_CLIENT_HELLO: return "WAITING_CLIENT_HELLO";
@@ -75,7 +75,7 @@ const char* tls_state_to_string(tls_state_t state) {
     }
 }
 
-int tls_state_is_valid_transition(tls_state_t from, tls_state_t to) {
+int axon_state_is_valid_transition(axon_state_t from, axon_state_t to) {
     switch (from) {
         case STATE_INIT:
             return to == STATE_WAITING_CLIENT_HELLO;

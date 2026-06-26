@@ -1,4 +1,4 @@
-#include "../include/constant.h"
+#include "../../crypto/include/constant.h"
 #include <string.h>
 
 uint32_t constant_time_eq(uint32_t a, uint32_t b) {

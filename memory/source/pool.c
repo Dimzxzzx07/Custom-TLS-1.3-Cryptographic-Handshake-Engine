@@ -1,5 +1,5 @@
-#include "../include/pool.h"
-#include "../include/secure.h"
+#include "pool.h"
+#include "secure.h"
 #include <stdlib.h>
 #include <string.h>
 

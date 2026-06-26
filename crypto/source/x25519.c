@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include "../include/x25519.h"
+#include "../../crypto/include/x25519.h"
 
 /* ------------------------------------------------------------------ *
  * Minimal Curve25519 / X25519 implementation (RFC 7748)

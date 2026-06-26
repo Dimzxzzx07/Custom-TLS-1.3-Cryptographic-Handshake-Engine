@@ -1,0 +1,12 @@
+Package: axon
+Version: 1.0.0-1
+Architecture: amd64
+Maintainer: Developer <dimzxae@gmail.com>
+Installed-Size: 145
+Depends: libc6 (>= 2.14)
+Section: net
+Priority: optional
+Homepage: https://github.com/dimzxae/axon
+Description: Axon - Custom TLS 1.3 Stack
+ High-performance TLS 1.3 implementation with constant-time operations
+ No legacy protocol support, memory-safe design, immune to downgrade attacks

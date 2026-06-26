@@ -1,32 +1,35 @@
-#include "../include/handshake.h"
-#include "../include/constants.h"
-#include "../include/record.h"
-#include "../../crypto/include/x25519.h"
-#include "../../crypto/include/hkdf.h"
-#include "../../crypto/include/sha256.h"
+#include "handshake.h"
+#include "constants.h"
+#include "record.h"
+#include "x25519.h"
+#include "hkdf.h"
+#include "sha256.h"
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-static void generate_random(uint8_t* buf, size_t len) {
+static int generate_random(uint8_t* buf, size_t len) {
     int fd = open("/dev/urandom", O_RDONLY);
-    if (fd >= 0) {
-        size_t total = 0;
-        while (total < len) {
-            ssize_t n = read(fd, buf + total, len - total);
-            if (n <= 0) break;
-            total += (size_t)n;
-        }
-        close(fd);
-    } else {
-        for (size_t i = 0; i < len; i++) {
-            buf[i] = (uint8_t)(i ^ 0x5A);
-        }
+    if (fd < 0) {
+        return -1;
     }
+    
+    size_t total_read = 0;
+    while (total_read < len) {
+        ssize_t n = read(fd, buf + total_read, len - total_read);
+        if (n <= 0) {
+            close(fd);
+            return -1;
+        }
+        total_read += n;
+    }
+    
+    close(fd);
+    return 0;
 }
 
-int tls_parse_client_hello(tls_context_t* ctx, const uint8_t* data, size_t len) {
+int axon_parse_client_hello(axon_context_t* ctx, const uint8_t* data, size_t len) {
     if (len < 40) return -1;
     
     size_t offset = 4;
@@ -71,7 +74,8 @@ int tls_parse_client_hello(tls_context_t* ctx, const uint8_t* data, size_t len) 
         
         if (ext_type == TLS_EXTENSION_KEY_SHARE && ext_len >= 32) {
             offset += 2;
-            offset += 2; /* skip named group */
+            uint16_t group = (data[offset] << 8) | data[offset + 1];
+            offset += 2;
             uint16_t key_len = (data[offset] << 8) | data[offset + 1];
             offset += 2;
             if (key_len == 32 && offset + 32 <= len) {
@@ -86,10 +90,10 @@ int tls_parse_client_hello(tls_context_t* ctx, const uint8_t* data, size_t len) 
     return 0;
 }
 
-int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
+int axon_build_server_hello(axon_context_t* ctx, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     
-    generate_random(ctx->server_random, 32);
+    if (generate_random(ctx->server_random, 32) < 0) return -1;
     
     x25519_generate_keypair(ctx->server_privkey, ctx->server_public_key);
     x25519_shared_secret(ctx->server_privkey, ctx->client_pubkey, ctx->shared_secret);
@@ -115,6 +119,7 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     
     out[offset++] = 0x00;
     
+    size_t ext_start = offset;
     out[offset++] = 0x00;
     out[offset++] = 0x00;
     
@@ -133,11 +138,11 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     memcpy(out + offset, ctx->server_public_key, 32);
     offset += 32;
     
-    uint16_t ext_len = (uint16_t)(offset - ext_len_start - 2);
+    uint16_t ext_len = offset - ext_len_start - 2;
     out[ext_len_start] = (ext_len >> 8) & 0xFF;
     out[ext_len_start + 1] = ext_len & 0xFF;
     
-    uint32_t payload_len = (uint32_t)(offset - payload_start);
+    uint32_t payload_len = offset - payload_start;
     out[1] = (payload_len >> 16) & 0xFF;
     out[2] = (payload_len >> 8) & 0xFF;
     out[3] = payload_len & 0xFF;
@@ -145,11 +150,11 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     *out_len = offset;
     ctx->messages_received |= 0x02;
     
-    tls_context_update_hash(ctx, out, *out_len);
+    axon_context_update_hash(ctx, out, *out_len);
     return 0;
 }
 
-int tls_build_encrypted_extensions(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
+int axon_build_encrypted_extensions(axon_context_t* ctx, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     
     size_t offset = 0;
@@ -169,11 +174,11 @@ int tls_build_encrypted_extensions(tls_context_t* ctx, uint8_t* out, size_t* out
     
     *out_len = offset;
     ctx->messages_received |= 0x04;
-    tls_context_update_hash(ctx, out, *out_len);
+    axon_context_update_hash(ctx, out, *out_len);
     return 0;
 }
 
-int tls_build_certificate(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
+int axon_build_certificate(axon_context_t* ctx, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     
     size_t offset = 0;
@@ -202,7 +207,7 @@ int tls_build_certificate(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     
     *out_len = offset;
     ctx->messages_received |= 0x08;
-    tls_context_update_hash(ctx, out, *out_len);
+    axon_context_update_hash(ctx, out, *out_len);
     return 0;
 }
 
@@ -220,7 +225,7 @@ static void compute_signature(const uint8_t* data, size_t len, uint8_t* sig, siz
     *sig_len = 64;
 }
 
-int tls_build_certificate_verify(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
+int axon_build_certificate_verify(axon_context_t* ctx, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     
     size_t offset = 0;
@@ -253,7 +258,7 @@ int tls_build_certificate_verify(tls_context_t* ctx, uint8_t* out, size_t* out_l
     
     *out_len = total_len;
     ctx->messages_received |= 0x10;
-    tls_context_update_hash(ctx, out, *out_len);
+    axon_context_update_hash(ctx, out, *out_len);
     return 0;
 }
 
@@ -270,7 +275,7 @@ static void compute_finished(const uint8_t* key, const uint8_t* transcript, size
     }
 }
 
-int tls_build_finished(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
+int axon_build_finished(axon_context_t* ctx, uint8_t* out, size_t* out_len) {
     if (!ctx || !out || !out_len) return -1;
     
     size_t offset = 0;
@@ -297,11 +302,11 @@ int tls_build_finished(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     *out_len = offset;
     ctx->messages_received |= 0x20;
     ctx->handshake_done = 1;
-    tls_context_update_hash(ctx, out, *out_len);
+    axon_context_update_hash(ctx, out, *out_len);
     return 0;
 }
 
-int tls_verify_finished(tls_context_t* ctx, const uint8_t* data, size_t len) {
+int axon_verify_finished(axon_context_t* ctx, const uint8_t* data, size_t len) {
     if (!ctx || !data || len < 32) return -1;
     
     uint8_t finished_key[32];
@@ -320,12 +325,13 @@ int tls_verify_finished(tls_context_t* ctx, const uint8_t* data, size_t len) {
     return 0;
 }
 
-void tls_derive_handshake_keys(tls_context_t* ctx) {
+void axon_derive_handshake_keys(axon_context_t* ctx) {
     if (!ctx) return;
     
     uint8_t salt[32] = {0};
     uint8_t prk[32] = {0};
     uint8_t info[64] = {0};
+    uint8_t key_material[96] = {0};
     
     for (int i = 0; i < 32; i++) {
         salt[i] = ctx->client_random[i] ^ ctx->server_random[i];
@@ -333,22 +339,21 @@ void tls_derive_handshake_keys(tls_context_t* ctx) {
     
     hkdf_extract(salt, 32, ctx->shared_secret, 32, prk);
     
-    info[0] = 0x00;
-    info[1] = 0x01;
-    info[2] = 0x02;
-    info[3] = 0x03;
-    info[4] = 0x54;
-    info[5] = 0x4C;
-    info[6] = 0x53;
+    info[0] = 0x54;
+    info[1] = 0x4C;
+    info[2] = 0x53;
+    info[3] = 0x20;
+    info[4] = 0x31;
+    info[5] = 0x2E;
+    info[6] = 0x33;
     info[7] = 0x20;
-    info[8] = 0x31;
-    info[9] = 0x2E;
-    info[10] = 0x33;
-    info[11] = 0x20;
-    info[12] = 0x6B;
-    info[13] = 0x65;
-    info[14] = 0x79;
-    info[15] = 0x73;
+    info[8] = 0x6B;
+    info[9] = 0x65;
+    info[10] = 0x79;
+    info[11] = 0x73;
+    info[12] = 0x00;
     
-    hkdf_expand(prk, 32, info, 64, ctx->master_secret, 48);
+    hkdf_expand(prk, 32, info, 13, key_material, 96);
+    
+    memcpy(ctx->master_secret, key_material, 48);
 }
