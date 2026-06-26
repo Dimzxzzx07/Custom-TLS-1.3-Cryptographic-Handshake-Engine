@@ -1,0 +1,4 @@
+(executable
+ (name axon)
+ (libraries)
+ (ocamlopt_flags -O3))

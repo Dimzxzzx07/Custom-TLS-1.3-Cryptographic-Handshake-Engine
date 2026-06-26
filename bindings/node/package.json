@@ -1,0 +1,11 @@
+{
+  "name": "axon-node",
+  "version": "1.0.0",
+  "description": "Axon Node.js binding",
+  "main": "client.js",
+  "scripts": {
+    "start": "node client.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

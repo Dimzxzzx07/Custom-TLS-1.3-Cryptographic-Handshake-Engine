@@ -1,0 +1,12 @@
+{
+  "name": "axon-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for Axon",
+  "main": "types.ts",
+  "types": "types.ts",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

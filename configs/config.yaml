@@ -1,0 +1,30 @@
+server:
+  port: 443
+  host: 0.0.0.0
+  
+tls:
+  min_version: "TLSv1.3"
+  max_version: "TLSv1.3"
+  cipher_suites:
+    - TLS_AES_128_GCM_SHA256
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+  
+  curves:
+    - X25519
+    - P-256
+  
+  signature_algorithms:
+    - RSA_PSS_RSAE_SHA256
+    - ECDSA_SECP256R1_SHA256
+
+security:
+  constant_time: true
+  memory_protection: true
+  downgrade_protection: true
+  replay_protection: false
+  zero_rtt: false
+
+logging:
+  level: info
+  format: json

@@ -1,0 +1,9 @@
+{
+    "name": "axon-d",
+    "description": "Axon D binding",
+    "copyright": "Copyright © 2026",
+    "authors": ["Developer"],
+    "license": "MIT",
+    "targetType": "library",
+    "dependencies": {}
+}

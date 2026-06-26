@@ -1,0 +1,14 @@
+Source: axon
+Section: net
+Priority: optional
+Maintainer: Developer <dimzxae@gmail.com>
+Build-Depends: debhelper-compat (= 13), cmake, make, gcc
+Standards-Version: 4.7.0
+Homepage: https://github.com/Dimzxzzx07/Custom-TLS-1.3-Cryptographic-Handshake-Engine
+
+Package: axon
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Axon — custom TLS 1.3 cryptographic handshake engine
+ High-performance TLS 1.3 implementation with constant-time operations.
+ No legacy protocol support, memory-safe design, immune to downgrade attacks.
