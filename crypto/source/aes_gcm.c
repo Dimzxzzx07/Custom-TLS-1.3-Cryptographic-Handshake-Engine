@@ -14,6 +14,7 @@ static void gcm_multiply(uint8_t* x, const uint8_t* y) {
 }
 
 static void gcm_ghash(uint8_t* hash, const uint8_t* h, const uint8_t* data, size_t len) {
+    (void)h;
     uint8_t temp[16] = {0};
     for (size_t i = 0; i < len; i += 16) {
         for (int j = 0; j < 16 && i + j < len; j++) {

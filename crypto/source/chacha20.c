@@ -71,7 +71,7 @@ static void poly1305_mul(uint8_t* h, const uint8_t* r) {
     uint64_t r3 = (U8TO32(r + 9) >> 6) & 0x3ffffff;
     uint64_t r4 = U8TO32(r + 12) >> 8;
     
-    uint64_t s0 = r0 * 5;
+    
     uint64_t s1 = r1 * 5;
     uint64_t s2 = r2 * 5;
     uint64_t s3 = r3 * 5;

@@ -3,8 +3,13 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "context.h"
+#include "state.h"
 
-typedef struct tls_engine tls_engine_t;
+typedef struct tls_engine {
+    tls_context_t context;
+    tls_state_t   state;
+} tls_engine_t;
 
 tls_engine_t* tls_engine_create(void);
 void tls_engine_destroy(tls_engine_t* eng);

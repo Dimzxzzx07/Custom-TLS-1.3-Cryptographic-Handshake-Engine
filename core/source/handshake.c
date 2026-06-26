@@ -12,7 +12,12 @@
 static void generate_random(uint8_t* buf, size_t len) {
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd >= 0) {
-        read(fd, buf, len);
+        size_t total = 0;
+        while (total < len) {
+            ssize_t n = read(fd, buf + total, len - total);
+            if (n <= 0) break;
+            total += (size_t)n;
+        }
         close(fd);
     } else {
         for (size_t i = 0; i < len; i++) {
@@ -66,8 +71,7 @@ int tls_parse_client_hello(tls_context_t* ctx, const uint8_t* data, size_t len) 
         
         if (ext_type == TLS_EXTENSION_KEY_SHARE && ext_len >= 32) {
             offset += 2;
-            uint16_t group = (data[offset] << 8) | data[offset + 1];
-            offset += 2;
+            offset += 2; /* skip named group */
             uint16_t key_len = (data[offset] << 8) | data[offset + 1];
             offset += 2;
             if (key_len == 32 && offset + 32 <= len) {
@@ -90,8 +94,6 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     x25519_generate_keypair(ctx->server_privkey, ctx->server_public_key);
     x25519_shared_secret(ctx->server_privkey, ctx->client_pubkey, ctx->shared_secret);
     
-    tls_context_update_hash(ctx, out, *out_len);
-    
     size_t offset = 0;
     out[offset++] = TLS_HANDSHAKE_SERVER_HELLO;
     out[offset++] = 0x00;
@@ -113,7 +115,6 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     
     out[offset++] = 0x00;
     
-    size_t ext_start = offset;
     out[offset++] = 0x00;
     out[offset++] = 0x00;
     
@@ -132,11 +133,11 @@ int tls_build_server_hello(tls_context_t* ctx, uint8_t* out, size_t* out_len) {
     memcpy(out + offset, ctx->server_public_key, 32);
     offset += 32;
     
-    uint16_t ext_len = offset - ext_len_start - 2;
+    uint16_t ext_len = (uint16_t)(offset - ext_len_start - 2);
     out[ext_len_start] = (ext_len >> 8) & 0xFF;
     out[ext_len_start + 1] = ext_len & 0xFF;
     
-    uint32_t payload_len = offset - payload_start;
+    uint32_t payload_len = (uint32_t)(offset - payload_start);
     out[1] = (payload_len >> 16) & 0xFF;
     out[2] = (payload_len >> 8) & 0xFF;
     out[3] = payload_len & 0xFF;

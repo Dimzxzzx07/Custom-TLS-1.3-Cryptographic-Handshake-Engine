@@ -19,7 +19,7 @@ int tls_record_read(tls_context_t* ctx, const uint8_t* data, size_t len, tls_rec
     if (record->content_type == TLS_CONTENT_ALERT) {
         if (record->length >= 2) {
             uint8_t level = data[5];
-            uint8_t desc = data[6];
+            
             if (level == TLS_ALERT_LEVEL_FATAL) {
                 return -1;
             }
